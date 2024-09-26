@@ -1,136 +1,110 @@
-To create a README document for your portal solution, I'll need to structure it in a way that provides clear instructions and explanations. Below is an example of how you can format your README file:
+## Problem Statement
 
----
+In a custom node-based canvas using `react-beautiful-dnd` for drag-and-drop functionality, there was an issue where fields inside a node shifted incorrectly when dragging and dropping. This was caused by the constraints of the canvas and the way `react-beautiful-dnd` renders dragged items. When a field is being dragged inside the node, its position calculation gets affected by the canvas’ scrolling, zooming, and positioning.
 
-# Portal Solution README
+Moreover, when a drag occurs within a container that has been transformed or scrolled, `react-beautiful-dnd` sometimes causes the dragged element to "escape" the boundaries of its parent container. This results in rendering issues and incorrect behavior in terms of positioning, especially if the parent element (in this case, a node) is being dragged or transformed.
 
-## Overview
-This portal solution is designed to provide a user-friendly interface with drag-and-drop functionalities, custom components, and seamless interaction. The application leverages **React**, **DND (react-beautiful-dnd)**, and other modern libraries to achieve an interactive and responsive design.
+## Solution
 
-## Features
-- **Custom Node Components**: Customizable nodes with editable fields.
-- **Drag-and-Drop Functionality**: Implemented using `react-beautiful-dnd` to reorder fields dynamically within nodes.
-- **State Management**: Uses `useState` and `useCallback` hooks for managing component states efficiently.
-- **Browser Compatibility**: Conditional rendering for browser-specific behavior using `isBrowser` checks.
+To fix this issue, we implemented a **Portal** to ensure that the dragged item can be rendered correctly without being affected by the transformations of the canvas or its parent elements. By using React Portals, we can render the dragged item at the root level (in `document.body`), allowing it to be independent of any parent container’s positioning or transformations.
 
-## Technologies Used
-- **React**: Frontend framework for building the user interface.
-- **react-beautiful-dnd**: For drag-and-drop features.
-- **Lucide-react**: For handling icons and UI enhancements.
-- **useReactFlow, useNodeId, useNodes**: React Flow hooks for managing nodes and edges in the canvas.
+The solution involved creating a `PortalAwareItem` component that dynamically determines whether an item should be rendered inside a portal or within its parent container. When the item is being dragged, it is rendered in a portal to bypass any layout issues caused by transformations.
 
-## Getting Started
+### Steps to Solution
 
-### Prerequisites
-Before you can run this project, ensure you have the following tools installed:
-- **Node.js** (v14.x or later)
-- **npm** or **yarn**
-- **React** (v17.x or later)
+1. **Create `PortalAwareItem` Component**:
+   We built a `PortalAwareItem` component that detects if an item is being dragged (when its position changes to `fixed`). If it is being dragged, the component renders the item in a portal to avoid the parent container's transformations. If not, it renders the item in its usual position within the DOM.
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repository/portal-solution.git
-   ```
-2. Navigate into the project directory:
-   ```bash
-   cd portal-solution
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+2. **Render the Dragged Item in a Portal**:
+   When a drag occurs, `react-beautiful-dnd` changes the `position` of the dragged item to `fixed`. The `PortalAwareItem` detects this and conditionally moves the item into a portal, allowing it to be rendered at the root level of the DOM (`document.body`), unaffected by transformations of its parent container (such as the node in the canvas).
 
-### Running the Project
-To run the project locally, execute the following command:
-```bash
-npm start
-# or
-yarn start
-```
-This will start the development server, and you can view the portal at:
-```
-http://localhost:3000
-```
+3. **Use `PortalAwareItem` Inside `Draggable` Component**:
+   We wrapped the content of the `Draggable` component inside the `PortalAwareItem`. This allows the item to be rendered properly during the drag operation while preserving its usual behavior when not being dragged.
 
-## How to Use
+### Code Explanation
 
-### Custom Node Component
-The main component of the portal is `CustomNode`, which renders draggable fields that users can interact with.
+#### 1. PortalAwareItem Component
 
-1. **Fields**: Users can edit field names and descriptions in the UI. Any changes will trigger the `onChange` function.
-2. **Drag and Drop**: Fields within a node can be reordered by dragging them. The `onDragEnd` function handles the reordering logic.
+The `PortalAwareItem` component checks whether the item is currently being dragged by checking if its `draggableProps.style.position` is set to `fixed`. If the item is being dragged, it renders it in a portal using `ReactDOM.createPortal`. Otherwise, it renders it normally in the DOM.
 
-### Preventing Event Propagation
-To ensure smooth interaction with drag-and-drop inside nodes while maintaining node-level interactions, event propagation is handled using the `onDragStart` function:
-```ts
-const onDragStart = useCallback((e: any) => {
-  e.stopPropagation();
-}, []);
-```
-This ensures that the drag behavior does not interfere with node-level event handling.
-
-### Drag and Drop Setup
-In the `CustomNode` component:
-- **DragDropContext** wraps the draggable items.
-- **Droppable** identifies the container where draggable items can be placed.
-- **Draggable** defines the fields that can be dragged.
-
-Example code:
 ```jsx
-<DragDropContext onDragEnd={onDragEnd}>
-  {isBrowser && (
-    <Droppable droppableId="droppable">
-      {(provided) => (
-        <div ref={provided.innerRef} {...provided.droppableProps}>
-          {fields.map((field, index) => (
-            <Draggable key={field.id} draggableId={field.id} index={index}>
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  {...provided.dragHandleProps}
-                  className="draggable-field"
-                >
-                  <input value={field.name} onChange={onChange} />
-                </div>
-              )}
-            </Draggable>
-          ))}
-          {provided.placeholder}
-        </div>
-      )}
-    </Droppable>
-  )}
-</DragDropContext>
+import { createPortal } from 'react-dom';
+
+const PortalAwareItem = ({ children, provided }: any) => {
+  // Check if the item is currently being dragged
+  const isDragging = provided.draggableProps.style?.position === 'fixed';
+
+  // If not dragging, render the item normally
+  if (!isDragging) {
+    return children;
+  }
+
+  // If dragging, render the item in a portal to avoid parent transformations
+  return createPortal(children, document.body);
+};
 ```
 
-## Known Issues
+#### 2. Using PortalAwareItem Inside Draggable
 
-### Shifting of Fields in Node
-When dragging a field inside a node, the field might shift due to node movement on the canvas. This can be solved by synchronizing the node's position with the field's initial position at the time of drag.
+We wrapped the draggable field inside the `PortalAwareItem`. This ensures that the field is rendered in the correct context when being dragged (in a portal) and in its normal position otherwise.
 
-## Future Improvements
-- **Performance Optimizations**: Improve drag-and-drop performance for larger datasets.
-- **Enhanced Node Customization**: Add more custom node fields and validation.
-- **Save and Load State**: Implement functionality to save the current node layout and reload it later.
+```jsx
+<PortalAwareItem provided={provided}>
+  <div
+    ref={provided.innerRef}
+    {...provided.draggableProps}
+    {...provided.dragHandleProps}
+    className="flex flex-row gap-[4px] border border-[#cbcbcb99] hover:border-[#DC79FF] border-solid rounded-[4px] bg-white p-2 mt-[7px] h-[60px] w-[200px]"
+  >
+    <div className="flex justify-center items-center w-[24px]">
+      <GripVertical className="w-22 h-22 text-[#AEAEAE]" />
+    </div>
+    <div className="flex flex-col">
+      <input
+        style={handleStyle}
+        type="text"
+        defaultValue={field.name}
+        onChange={onChange}
+        placeholder="Name"
+        className="text-[#091e42] font-inter font-medium text-base w-[150px]"
+      />
+      <input
+        style={handleStyle}
+        type="text"
+        defaultValue={field.description}
+        onChange={onChange}
+        placeholder="Description"
+        className="text-[#5e6c84] font-inter text-base font-normal leading-[150%] w-[150px]"
+      />
+    </div>
+  </div>
+</PortalAwareItem>
+```
 
-## Contributing
-We welcome contributions to improve the portal solution! To contribute:
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Commit your changes (`git commit -m "Add new feature"`).
-4. Push the branch (`git push origin feature/your-feature`).
-5. Open a Pull Request.
-
-## License
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
-
-## Contact
-For questions or support, please contact the repository owner at `email@example.com`.
+By wrapping the content of the `Draggable` component in `PortalAwareItem`, we ensure that the drag-and-drop behavior works as expected, regardless of any transformations or scrolling applied to the parent canvas or node.
 
 ---
 
-This README template provides an overview of the portal solution, installation steps, usage instructions, and other important details. Let me know if you'd like to modify or add anything specific to this document!
+## Explanation of the Need for Portals
+
+The need for rendering an item in a portal arises because of how `react-beautiful-dnd` handles drag events. When a user starts dragging an item, its `position` is set to `fixed` to ensure that it remains visible during the drag operation, independent of its container's position or layout. However, when a parent container is transformed (e.g., translated or zoomed), the dragged item can be affected by these transformations, leading to incorrect positioning or rendering glitches.
+
+By rendering the dragged item in a portal (i.e., at the top level of the DOM), we remove it from its parent container’s coordinate system. This ensures that the dragged item is displayed correctly, unaffected by any transformations applied to its parent container.
+
+## Summary
+
+### Problem:
+When dragging fields inside a node on a canvas, the dragged items were being incorrectly positioned due to canvas transformations and scroll effects.
+
+### Solution:
+We created a `PortalAwareItem` component to detect when an item is being dragged and render it in a portal. This bypasses any transformation effects applied to the node or canvas, ensuring the item’s position is calculated independently and correctly during the drag operation.
+
+---
+
+### Benefits of the Solution
+
+- **Correct Positioning**: The dragged item is no longer affected by the transformations or scrolling of its parent container.
+- **Seamless Drag-and-Drop**: The drag-and-drop behavior works smoothly, with no visible shifts or glitches, providing a better user experience.
+- **Reusable Logic**: The `PortalAwareItem` component is a reusable solution for any situation where a dragged item’s position might be affected by parent transformations.
+
+By using this solution, the dragging and dropping functionality in a node-based canvas works as expected, even when the canvas or nodes are being moved or transformed.
