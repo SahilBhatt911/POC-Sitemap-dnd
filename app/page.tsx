@@ -1,30 +1,62 @@
-"use client";
+'use client';
 
-import './App.css';
-import { ReactFlow } from '@xyflow/react';
-import CustomNode from '@/components/customNodes';
+import { useEffect, useState } from 'react';
+import { Panel, ReactFlow } from '@xyflow/react';
+import HeroHeader from '@/components/hero-header';
+import { Monitor, Tablet, Smartphone } from "lucide-react";
+import './App.css'
 
 function App() {
-  const nodeTypes = { textUpdater: CustomNode };
-
+  const [viewMode, setViewMode] = useState('desktop');
+  
   const initialNodes = [
-    { id: '1', position: { x: 0, y: 0 }, data: { label: '1' }, type: 'textUpdater' }
+    {
+      id: '1',
+      position: { x: -50, y: 100 },
+      data: { label: 'Sample Node' },
+      type: 'custom',
+    },
   ];
 
-  const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }];
+  const CustomNode = () => <HeroHeader viewMode={viewMode} />;
+
+  const nodeTypes = {
+    custom: CustomNode,
+  };
 
   return (
-    <div style={{ height: "100vh" }}>
-      <ReactFlow 
-        nodeTypes={nodeTypes} 
-        nodes={initialNodes.map((node: any) => ({
-          ...node,
-          data: {
-            ...node.id,
-            ...node.position
-          },
-        }))}
-        edges={initialEdges} 
+    <div className="overflow-auto w-screen h-screen">
+      <div className="flex items-center gap-4 p-2 bg-gray-100 rounded-lg shadow">
+        <button
+          className="flex flex-col items-center justify-center cursor-pointer text-gray-600 hover:text-blue-500"
+          onClick={() => {setViewMode('desktop'); console.log('clicked')}}
+          title="Desktop Mode"
+        >
+          <Monitor size={24} />
+          <span className="text-xs">Desktop</span>
+        </button>
+        <button
+          className="flex flex-col items-center justify-center cursor-pointer text-gray-600 hover:text-blue-500"
+          onClick={() => {setViewMode('tablet'); console.log('clicked')}}
+          title="Tablet Mode"
+        >
+          <Tablet size={24} />
+          <span className="text-xs">Tablet</span>
+        </button>
+        <button
+          className="flex flex-col items-center justify-center cursor-pointer text-gray-600 hover:text-blue-500"
+          onClick={() => setViewMode('mobile')}
+          title="Mobile Mode"
+        >
+          <Smartphone size={24} />
+          <span className="text-xs">Mobile</span>
+        </button>
+      </div>
+      <ReactFlow
+        nodes={initialNodes}
+        nodeTypes={nodeTypes}
+        fitView
+        className='bg-gray-300'
       />
     </div>
   );

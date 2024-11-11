@@ -1,20 +1,75 @@
-ul {
-    list-style: none;
-    padding-left: 5px;
-  }
-  
-  .box {
-    width: 200px;
-    height: 50px;
-    margin-bottom: 5px;
-  }
-  
-  .red {
-    background: red;
-  }
-  
-  .green {
-    background: green;
-  }
-  
-  
+
+.global_overflow{
+  overflow: auto;
+}
+
+.desktop_width{
+  width:1080px
+}
+
+.tablet_width{
+  width:810px
+}
+
+.mobile_width{
+  width:400px
+}
+
+/* Layout styles for each view mode */
+.heroHeaderLayoutDesktop {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 16px;
+  align-items: center;
+}
+
+.heroHeaderLayoutTablet {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px 16px;
+  align-items: center;
+}
+
+.heroHeaderLayoutMobile {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px 20px;
+}
+
+.leftContent,
+.rightContent {
+
+}
+
+.heroHeaderH1Desktop, .heroHeaderH1Tablet {
+  margin-bottom: 6px;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.heroHeaderH1Mobile {
+  margin-bottom: 5px;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.heroHeaderPDesktop,
+.heroHeaderPTablet,
+.heroHeaderPMobile {
+  font-size: 1rem;
+}
+
+.buttonGroupingDesktop,
+.buttonGroupingTablet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.buttonGroupingMobile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
